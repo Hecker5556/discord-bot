@@ -1,2 +1,1 @@
-# discord-bot
-my discord bot idk
+#basic discord bot that uses chatgpt and instagram post downloader
