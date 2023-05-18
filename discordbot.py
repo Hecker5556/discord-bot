@@ -79,7 +79,7 @@ async def chatgpt(ctx, content: str, jailbroken: bool = False, api: str = None):
         commandCount = {}
      usageCount = commandCount.get(userID, 0)
      if usageCount >= 10:
-        await ctx.followup.send("youve used this command 3 times today, use your own api key pls, tutorial /get-api-token, resetting the limit for everyone tomorrow", ephemeral=True)
+        await ctx.followup.send("youve used this command 10 times today, use your own api key pls, tutorial /get-api-token, resetting the limit for everyone tomorrow", ephemeral=True)
         return
      commandCount[userID] = usageCount + 1
      with open(commandCountFile, "w") as file:
