@@ -167,47 +167,7 @@ async def insta(ctx, link):
       await ctx.send(file=fpath)
       os.remove(image)
       await asyncio.sleep(1)
-
-
-#ADD EMOJI
-
-
-# @bot.hybrid_command(description='add emojis, [int1] [int2], leave int2 empty if to the end')
-# async def addemoji(message, *, args):
-#   with open("emojis.json", "r") as f1:
-#     f1 = f1.read()
-#     emojis = json.loads(f1)
-#   args = args.split()
-#   arguments = []
-#   for i in args:
-#     try:
-#       arguments.append(int(i))
-#     except:
-#       pass
-#   if len(arguments) == 1:
-#     arguments.append(None)
-#   await message.send(f"adding emojis from {arguments[0]}:{arguments[1]}")
-#   count = 0
-#   for i in emojis[arguments[0]:arguments[1]]:
-#     if count < 50:
-#       r = requests.get(i["url"])
-#       with open(f"{i['name']}.png", "wb") as writeimage:
-#         writeimage.write(r.content)
-#       with open(f"{i['name']}.png", "rb") as readimage:
-#         imgBytes = readimage.read()
-#       await message.guild.create_custom_emoji(name = i["name"], image = imgBytes)
-#       print(f"added {i['url']} index {emojis.index(i)}")
-#       os.remove(f"{i['name']}.png")
-#       count += 1
-#       await asyncio.sleep(2)
-#     else:
-#        break
-#   emoji = message.guild.emojis[count * -1:]
-#   messtr = "added:"
-#   for i in emoji:
-#      messtr += str(i)
-#   await message.send(messtr)
-
+
 
 #CONSOLE OPERATIONS
 
@@ -258,32 +218,7 @@ async def console(ctx, *, args):
    else:
       await ctx.send("youre not the owner get out")
 
-
-#EMOJI OPERATIONS
-
-
-@bot.command()
-async def lastemoji(ctx):
-   await ctx.send(ctx.guild.emojis[-1])
-
-@bot.command()
-async def emojilist(ctx):
-  await ctx.send(ctx.guild.emojis)
-
-@bot.command()
-async def removeemojis(ctx):
-    await ctx.message.delete()
-    for Emoji in ctx.guild.emojis:
-        await ctx.send(f"deleted {Emoji}")
-        await Emoji.delete()
-        await asyncio.sleep(5)
-
-@bot.command()
-async def nameemojis(ctx):
-   for emoji in ctx.guild.emojis:
-      await ctx.send(emoji)
-      await asyncio.sleep(2)
-
+
 
 #BOT COMMANDS
 
