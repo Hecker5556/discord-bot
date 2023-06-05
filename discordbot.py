@@ -10,11 +10,18 @@ import json
 import re
 import sys
 from dotenv import load_dotenv
+from PIL import Image, ImageSequence
+import traceback
+from datetime import datetime, timedelta
+import time
+import random
 load_dotenv()
 process = None
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.guilds = True
+intents.members = True
 bot = commands.Bot(command_prefix='$', intents=intents, help_command = None)
 
 
@@ -134,40 +141,206 @@ async def chatgpt(ctx, content: str, jailbroken: bool = False, api: str = None):
 
 @bot.hybrid_command()
 async def insta(ctx, link):
+   if 'instagram.com' not in link:
+      await ctx.send("please give me an instagram link and not try to ip grab me")
+      return
+   await ctx.defer()
    cookies = {
    'sessionid': os.getenv("INSTAID"),
 }
    response = requests.get(link, cookies=cookies)
    response = response.text
-   response = response.replace("\/", "/")
-   response = response.encode('utf-8').decode('unicode_escape')
+   user = await bot.fetch_user(261475568204251138)
+   try:
+      response = response.replace("\/", "/")
+      response = response.encode('utf-8').decode('unicode_escape')
+   except Exception as e:
+      ctx.send(e)
    try:
       patternvideo = r'"contentUrl":"(.*?)","thumbnailUrl"'
       matchesvideo = re.findall(patternvideo, response)
-      patternimages = r'"url":"(https://scontent\.cdninstagram\.com[^"]+)"}'
+         # await ctx.send(response[:2000])
+      patternimages = r'"url":"(https://scontent\.cdninstagram\.com/[^"]+)(?=.*"}],"interactionStatistic")'
       matchesimages = re.findall(patternimages, response)
       if matchesimages == []:
-         matchesimages = re.findall(r'"url":"(https://scontent-waw1-1\.cdninstagram\.com[^"]+)"}', response)
+         matchesimages = re.findall(r'"url":"(https:\/\/scontent-waw1-1\.cdninstagram\.com\/[^"]+)(?=.*"}],"interactionStatistic")', response)
+      if matchesimages == [] and matchesvideo == []:
+         await ctx.send("couldnt find media links")
+         if response[:2000] is not None:
+            await ctx.send("dming hecker the response")
+            if len(response) < 2000:
+               await user.send(response)
+            else:
+               with open("response.txt", "w") as f1:
+                  f1.write(response)
+               await user.send(file=File("response.txt"))
+            await user.send("test response 1")
+         else:
+            await ctx.send("the response is None for some reason")
+            await user.send("test resposne 2")
+         return
    except Exception as e:
       await ctx.send(e)
-   video = "funnyvideo.mp4"
-   for i in matchesvideo:
-      with open(video, "wb") as f1:
-         response = requests.get(i, stream=True)
-         f1.write(response.content)
-      fpath = File(video)
-      await ctx.send(file=fpath)
-      os.remove(video)
-   image = "funnyimage.jpg"
-   for i in matchesimages:
-      with open(image, "wb") as f1:
-         response = requests.get(i)
-         f1.write(response.content)
-      fpath = File(image)
-      await ctx.send(file=fpath)
-      os.remove(image)
-      await asyncio.sleep(1)
-
+   video = "funnyvideo"
+   if matchesvideo != []:
+      for i in matchesvideo:
+         try:
+            # await ctx.send(i)
+            currenttime = time.strftime("%d-%m-%y_%H-%M-%S", time.localtime())
+            with open(video + currenttime + ".mp4", "wb") as f1:
+               response = requests.get(i, stream=True)
+               f1.write(response.content)
+            fpath = File(video + currenttime + ".mp4")
+            await ctx.send(file=fpath)
+            os.remove(video + currenttime + ".mp4")
+         except Exception as e:
+            await ctx.send(e)
+   image = "funnyimage"
+   if matchesimages != []:
+      for i in matchesimages:
+         try:
+            currenttime = time.strftime("%d-%m-%y_%H-%M-%S", time.localtime())
+            with open(image + currenttime + ".jpg", "wb") as f1:
+               response = requests.get(i)
+               f1.write(response.content)
+            fpath = File(image + currenttime + ".jpg")
+            await ctx.send(file=fpath)
+            os.remove(image + currenttime + ".jpg")
+         except Exception as e:
+            await ctx.send(e)
+#GIF TO APNG UNDER 512KB
+
+@bot.tree.command()
+async def giftosticker(ctx, name: str, emoji: str, attachment: discord.Attachment = None, link: str = None):
+    await ctx.response.defer()
+    author = ctx.user
+    guild = ctx.guild
+    if not author.guild_permissions.manage_emojis_and_stickers:
+       await ctx.followup.send("you dont have perms to do this lol")
+       return
+    if attachment == None and link == None:
+       await ctx.followup.send("give me something to work with??", ephemeral=True)
+       return
+    if "discordapp.com" not in link:
+       await ctx.followup.send("please send a discord url and not an ip grabber")
+       return
+    try:
+      if attachment == None:
+         r = requests.get(link)
+      elif link == None:
+         r = requests.get(attachment.url)
+      with open("./tempgif.gif", "wb") as f1:
+            f1.write(r.content)
+      gif = Image.open("tempgif.gif")
+      frames = [frame.copy().resize((100,100), Image.LANCZOS) for frame in ImageSequence.Iterator(gif)]
+      filenames = []
+      for i, frame in enumerate(frames):
+         filename = f'frame_{i}.png'
+         frame.save(filename, 'PNG', quality=30, optimize=True)
+         filenames.append(filename)
+      frames2 = []
+      for file in filenames:
+            frame = Image.open(file)
+            frames2.append(frame.convert('RGB'))
+      frames2[0].save("output.png", save_all=True, append_images=frames[1:], duration=50, loop=0, optimize=True)
+
+      headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+   }
+
+      with open('output.png', 'rb') as f:
+         data = f.read()
+
+      response = requests.post('https://api.tinify.com/shrink', headers=headers, data=data, auth=('api', os.getenv("TINYURLAPI")))
+      responsedata = json.loads(response.text)
+      url = responsedata['output']['url']
+      resp = requests.get(url)
+      with open("output.png", "wb") as f1:
+         f1.write(resp.content)
+      for i in filenames:
+         os.remove(i)
+      await ctx.followup.send("Done!")
+      await ctx.followup.send("adding it as a sticker")
+      import random
+      try:
+         await ctx.guild.create_sticker(name=name, emoji=str(ord(emoji)), file=File("output.png"), description=f"funny sticker {str(random.randint(0,1000))}")
+         await ctx.followup.send("succesfully created sticker!")
+      except Exception as e:
+         await ctx.followup.send(e)
+         await ctx.followup.send(f'{os.stat("output.png").st_size / 1000}kb image size')
+         if os.stat("output.png").st_size / 1000 > 512:
+            await ctx.followup.send("compress your gif or something idk")
+      await ctx.followup.send(file=File("output.png"))
+    except Exception as e:
+      await ctx.followup.send(f"Error!: {e}")
+
+#MODERATION
+
+
+@bot.event
+async def on_member_join(member):
+   with open("whitelistguilds.json") as f1:
+      whitelistguilds = json.load(f1)
+   try:
+      a = whitelistguilds[str(member.guild.id)]
+   except KeyError:
+      with open("whitelistguilds.json") as f:
+         whitelist = json.load(f)
+      whitelist[str(member.guild.id)] = "disable"
+      with open("whitelistguilds.json", "w") as f1:
+         json.dump(whitelist, f1)
+      return
+   if whitelistguilds[str(member.guild.id)] == "enable":
+      with open("whitelist.json") as f:
+         whitelist = json.load(f)
+      if member.id in whitelist:
+         return
+      creationdate = member.created_at.replace(tzinfo=None)
+      thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+      if creationdate < thirty_days_ago:
+         pass
+      else:
+         user = await bot.fetch_user(member.id)
+         await user.send("your account is younger than 30 days, join when its older!(message Hecker#5556 if u wanna get whitelisted if I know u)")
+         if member.guild.id == 1104059338336776322:
+            channel = await bot.fetch_channel(1104060687313014825)
+            time_difference = datetime.utcnow() - creationdate
+
+    # Extract the number of days, hours, and minutes from the time difference
+            days = time_difference.days
+            hours, remainder = divmod(time_difference.seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+            await channel.send(f"kicking user {member.name} id: {member.id} for new account, {days}d {hours}h {minutes}m")
+         await member.kick(reason="account younger than 30 days")
+         
+      
+@bot.command()
+async def addtowl(ctx, userid: str, name: str = None):
+   if ctx.author.id == 261475568204251138:
+      with open("whitelist.json") as f:
+         whitelist = json.load(f)
+      if name == None:
+         username = await bot.fetch_user(userid)
+         whitelist[userid] = username.name
+      else:
+         whitelist[userid] = name
+      with open("whitelist.json", "w") as f:
+         json.dump(whitelist, f)
+      await ctx.send(f"succesfully added {userid}")
+
+@bot.command()
+async def whitelistsetting(ctx, arg: str):
+   if ctx.author.guild_permissions.administrator:
+      if arg != "enable" and arg != "disable":
+         await ctx.send("argument can only be enable or disable")
+         return
+      with open("whitelistguilds.json") as f1:
+         whitelistguilds = json.load(f1)
+      whitelistguilds[str(ctx.guild.id)] = arg
+      with open("whitelistguilds.json", "w") as f1:
+         json.dump(whitelistguilds, f1)
+      await ctx.send(f"succesfully changed settings to: {arg}")
+
 
 #CONSOLE OPERATIONS
 
@@ -218,7 +391,8 @@ async def console(ctx, *, args):
    else:
       await ctx.send("youre not the owner get out")
 
-
+
+
 
 #BOT COMMANDS
 
