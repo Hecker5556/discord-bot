@@ -153,7 +153,6 @@ async def insta(ctx, link):
    user = await bot.fetch_user(261475568204251138)
    try:
       response = response.replace("\/", "/")
-      response = response.encode('utf-8').decode('unicode_escape')
    except Exception as e:
       ctx.send(e)
    try:
@@ -184,6 +183,7 @@ async def insta(ctx, link):
    video = "funnyvideo"
    if matchesvideo != []:
       for i in matchesvideo:
+         i = i.encode('utf-8').decode('unicode_escape')
          try:
             # await ctx.send(i)
             currenttime = time.strftime("%d-%m-%y_%H-%M-%S", time.localtime())
@@ -198,6 +198,7 @@ async def insta(ctx, link):
    image = "funnyimage"
    if matchesimages != []:
       for i in matchesimages:
+		 i = i.encode('utf-8').decode('unicode_escape')
          try:
             currenttime = time.strftime("%d-%m-%y_%H-%M-%S", time.localtime())
             with open(image + currenttime + ".jpg", "wb") as f1:
