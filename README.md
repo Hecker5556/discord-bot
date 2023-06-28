@@ -1,1 +1,1 @@
-# basic discord bot that uses chatgpt and instagram post downloader
+# basic discord bot that supports: chatgpt, dall e, instagram downloader, youtube downloader, gif to sticker, kick new accounts
