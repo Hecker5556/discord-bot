@@ -2,6 +2,5 @@ discord
 requests
 python-dotenv
 Pillow
-ffmpeg-python
 openai
 yt_dlp
