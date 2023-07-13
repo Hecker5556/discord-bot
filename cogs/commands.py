@@ -178,7 +178,7 @@ class MyClient(commands.Cog):
                 filepaths.append(f"image{i+1}.png")
             await ctx.followup.send(files=[File(i) for i in filepaths])
             channel = ctx.channel
-            async def check(m: discord.Message):
+            def check(m: discord.Message):
                 return m.author == ctx.user and m.channel == channel and m.content in ["1", "2", "3", "4"]
             await ctx.followup.send("pick which one to make a variation of (reply with one number 1-4, you have 60 seconds): ")
             response = await bot.wait_for('message', check=check, timeout=60.0)
